@@ -298,48 +298,25 @@ class FirebaseHackathonUploader:
             raise
 
 def main():
-    """Main function to run the uploader"""
-    
-    # OPTION 1: Direct path (UPDATE THIS PATH)
-    # SERVICE_ACCOUNT_PATH = r"C:\Users\Admin\Desktop\hackathon ieee\firebase-service-account.json"
-    
-    # OPTION 2: Same folder as script
-    SERVICE_ACCOUNT_PATH = "serviceAccountKey.json"
-    
-    # OPTION 3: Use environment variable
-    # SERVICE_ACCOUNT_PATH = None  # Will use FIREBASE_SERVICE_ACCOUNT_PATH env var
-    
+    SERVICE_ACCOUNT_PATH = None  # Use env variable FIREBASE_SECRET
     CSV_FILE_PATH = "scraped_hackathons.csv"
-    
-    # Define which statuses you want to upload
-    ALLOWED_STATUSES = ['open', 'recent']  # Only upload open and recent hackathons
-    
-    # Alternative options:
-    # ALLOWED_STATUSES = ['open', 'recent', 'closed']  # Includes closed but excludes expired
-    # ALLOWED_STATUSES = ['open']  # Only open hackathons
-    # ALLOWED_STATUSES = None  # Upload all statuses (default behavior)
-    
+    ALLOWED_STATUSES = ['open', 'recent']
+
     try:
-        # Initialize uploader
         uploader = FirebaseHackathonUploader(SERVICE_ACCOUNT_PATH)
-        
-        # Check current count in Firebase
         current_count = uploader.get_hackathons_count()
         if current_count is not None:
             print(f"Current hackathons in Firebase: {current_count}")
-        
-        # First, delete expired hackathons from Firebase
+
         print("\n🧹 Cleaning up expired hackathons from Firebase...")
-        deleted_count = uploader.delete_hackathons_by_status(['expired'])
-        
-        # Upload from CSV with status filtering
+        uploader.delete_hackathons_by_status(['expired'])
+
         result = uploader.upload_from_csv(CSV_FILE_PATH, allowed_statuses=ALLOWED_STATUSES)
-        
-        # Show final count
+
         final_count = uploader.get_hackathons_count()
         if final_count is not None:
             print(f"Final hackathons in Firebase: {final_count}")
-        
+
     except Exception as e:
         print(f"Upload failed: {e}")
 
