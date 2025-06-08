@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Firebase service account key
+firebase_key.json
+
+# Environment files
+.env
+.env.*
+
+# VSCode settings
+.vscode/
+
+# MacOS/Linux/Windows system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# GitHub Actions temporary files
+*.bak
+*.swp
+
+# CSV files (optional — if scraped CSV shouldn't be tracked)
+# scraped_hackathons.csv
