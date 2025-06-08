@@ -1,0 +1,5 @@
+firebase-admin
+requests
+pandas
+google-cloud-firestore
+google-cloud-storage
