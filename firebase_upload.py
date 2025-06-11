@@ -6,14 +6,8 @@ from datetime import datetime
 import json
 import os
 from dotenv import load_dotenv
-import os
 
 load_dotenv()  # loads .env file variables into environment
-
-service_account_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_PATH')
-if not service_account_path:
-    raise Exception("Firebase service account path not provided. Please set FIREBASE_SERVICE_ACCOUNT_PATH in your environment variables.")
-
 
 class FirebaseHackathonUploader:
     def __init__(self, service_account_path=None):
@@ -22,7 +16,7 @@ class FirebaseHackathonUploader:
         
         Args:
             service_account_path (str): Path to Firebase service account JSON file
-                                      If None, will look for FIREBASE_SERVICE_ACCOUNT_PATH env variable
+                                      If None, will look for FIREBASE_SECRET env variable
         """
         self.db = None
         self.initialize_firebase(service_account_path)
@@ -42,17 +36,25 @@ class FirebaseHackathonUploader:
             firebase_secret_json = os.getenv('FIREBASE_SECRET')
             
             if firebase_secret_json:
-                # Parse JSON string from env var
-                secret_dict = json.loads(firebase_secret_json)
-                cred = credentials.Certificate(secret_dict)
-                print("Firebase credential loaded from FIREBASE_SECRET environment variable")
+                try:
+                    # Parse JSON string from env var
+                    secret_dict = json.loads(firebase_secret_json)
+                    cred = credentials.Certificate(secret_dict)
+                    print("Firebase credential loaded from FIREBASE_SECRET environment variable")
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in FIREBASE_SECRET environment variable: {e}")
             else:
                 # Fall back to file path
                 if not service_account_path:
                     service_account_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_PATH')
                 
                 if not service_account_path:
-                    raise ValueError("Firebase service account path not provided. Please provide the path or set FIREBASE_SERVICE_ACCOUNT_PATH environment variable.")
+                    raise ValueError(
+                        "Firebase credentials not provided. Please either:\n"
+                        "1. Set FIREBASE_SECRET environment variable with your service account JSON, or\n"
+                        "2. Set FIREBASE_SERVICE_ACCOUNT_PATH environment variable with path to service account file, or\n"
+                        "3. Pass service_account_path parameter to the constructor"
+                    )
                 
                 if not os.path.exists(service_account_path):
                     raise FileNotFoundError(f"Service account file not found: {service_account_path}")
@@ -196,7 +198,7 @@ class FirebaseHackathonUploader:
                 print(f"Filtered by status {allowed_statuses}: {filtered_count} hackathons (removed {original_count - filtered_count})")
                 
                 if filtered_count == 0:
-                    print(" No hackathons match the specified status criteria!")
+                    print("No hackathons match the specified status criteria!")
                     return {'total': 0, 'added': 0, 'updated': 0, 'errors': 0}
             
             # Remove duplicates (keep the most recent status priority)
@@ -246,7 +248,7 @@ class FirebaseHackathonUploader:
             if isinstance(statuses_to_delete, str):
                 statuses_to_delete = [statuses_to_delete]
             
-            print(f"  Deleting hackathons with status: {statuses_to_delete}")
+            print(f"Deleting hackathons with status: {statuses_to_delete}")
             
             # Query hackathons with specified statuses
             deleted_count = 0
@@ -272,11 +274,11 @@ class FirebaseHackathonUploader:
             if batch_count > 0:
                 batch.commit()
             
-            print(f" Successfully deleted {deleted_count} hackathons with status {statuses_to_delete}")
+            print(f"Successfully deleted {deleted_count} hackathons with status {statuses_to_delete}")
             return deleted_count
             
         except Exception as e:
-            print(f" Error deleting hackathons by status: {e}")
+            print(f"Error deleting hackathons by status: {e}")
             raise
     
     def delete_all_hackathons(self):
@@ -317,7 +319,7 @@ def main():
         if current_count is not None:
             print(f"Current hackathons in Firebase: {current_count}")
 
-        print("\n Cleaning up expired hackathons from Firebase...")
+        print("\nCleaning up expired hackathons from Firebase...")
         uploader.delete_hackathons_by_status(['expired'])
 
         result = uploader.upload_from_csv(CSV_FILE_PATH, allowed_statuses=ALLOWED_STATUSES)
